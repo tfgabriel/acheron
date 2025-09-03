@@ -2,13 +2,17 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 
+#define KEY_SPACE 32
+#define KEY_ESCAPE 280
+#define KEY_UP 
+
 int win_size[] = {600, 800};
 const char win_name[] = "Acheron";
 GLFWwindow* main_win;
 
 typedef struct{
   int keyId;
-  void (*action)();
+  void (*action)(void* arg);
 }keyBind;
 
 typedef struct{
@@ -54,28 +58,49 @@ colRGBAnorm* normalizeColorRGBA(colRGBA* col){
 }
 
 colRGBAnorm* curCol;
+
 keyBind* setkeyBind(int keyId, void (*action)()){
-  keyBind* kb = malloc(sizeof(keyBind));
-  kb -> keyId = keyId;
-  kb -> action = action;
+  keyBind* kb = malloc(siz1eof(keyBind));
+  kb->keyId = keyId;
+  kb->action = action;
 
   return kb;
 }
 
-keyBind keyMap[];
-keyBind* keyBindSpace;
-keyBind* keyBindEscape;
-
-void changeColor(){
+void changeColor(void* arg){
   curCol->r += 0.001f;
   curCol->g += 0.001f;
   curCol->b += 0.001f;
 };
 
+void adjustRed(){
+  if(isIncreasing)
+    curCol->r += 0.01f;
+  else
+    curCol->r -= 0.01f;
+}
+/*void adjustGreen(){
+  if(isIncreasing)
+    curCol->g += 0.01f;
+  else
+    curCol->g -= 0.01f;
+}
+void adjustBlue(){
+  if(isIncreasing)
+    curCol->b += 0.01f;
+  else
+    curCol->b -= 0.01f; 
+}*/
+void adjustAlpha(){
+  if(isIncreasing)
+    curCol->a += 0.01f;
+  else
+    curCol->a -= 0.01f;
+}
+
 void quit(){
   glfwSetWindowShouldClose(main_win, true);
 };
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
   glViewport(0, 0, width, height);
@@ -105,12 +130,11 @@ void colorPixel(colRGBAnorm* col){
   glClearColor(col->r, col->g, col->b, col->a);
 };
 
-void processInput(){
-  if(glfwGetKey(main_win, keyBindSpace->keyId) == GLFW_PRESS){
-    keyBindSpace->action();
-  }
-  if(glfwGetKey(main_win, keyBindEscape->keyId) == GLFW_PRESS){
-    keyBindEscape->action();
+void processInput(keyBind ** km, int kms){
+  for(int i = 0; i < kms; i++){ 
+    if(glfwGetKey(main_win, km[i]->keyId) == GLFW_PRESS){
+      km[i]->action();
+    }
   }
 }
 
@@ -118,13 +142,16 @@ int main(){
 	initGlfw();
 	main_win = initWindow(win_size, win_name);
 	initGlad();
-	
-  keyBindSpace = setkeyBind(32, changeColor);
-  keyBindEscape = setkeyBind(280, quit);
+
+  keyBind* keyMap[] = {
+    setkeyBind(GLFW_KEY_SPACE, changeColor),
+    setkeyBind(GLFW_KEY_CAPS_LOCK, quit),
+    setkeyBind(GLFW_KEY_UP, )};
+  int keyMapSize = sizeof(keyMap)/sizeof(keyBind*);
 
   curCol = setcolRGBAnorm(0.1f, 0.1f, 0.1f, 1.0f);
 	while(!glfwWindowShouldClose(main_win)){
-    processInput();
+    processInput(keyMap, keyMapSize);
 		
     colorPixel(curCol);
     glClear(GL_COLOR_BUFFER_BIT);

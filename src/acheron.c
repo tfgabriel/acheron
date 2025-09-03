@@ -1,106 +1,114 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
-
-#define KEY_SPACE 32
-#define KEY_ESCAPE 280
-#define KEY_UP 
+#include <stdio.h>
 
 int win_size[] = {600, 800};
 const char win_name[] = "Acheron";
 GLFWwindow* main_win;
+int useLogs = 1;
 
 typedef struct{
   int keyId;
-  void (*action)(void* arg);
+  void (*action)();
 }keyBind;
 
 typedef struct{
-  int r, g, b, a;
-}colRGBA;
-
-typedef struct{
   float r, g, b, a;
-}colRGBAnorm;
+}RGBAn;
 
+float absf(float a){
+  if(a<0.0f)
+    a= -a;
+  return a;
+}
 float floatMod(float a, float b){
-  return a - (int)(a/b) * b;
+  return absf(a - (int)(a/b) * b);
 }
 
-colRGBA* setcolRGBA(int r, int g, int b, int a){
-  colRGBA* rgba = malloc(sizeof(colRGBA));
-  rgba -> r = r%256;
-  rgba -> g = g%256;
-  rgba -> b = b%256;
-  rgba -> a = a%256;
-
-  return rgba;
+float clampf(float a, float min, float max){
+  if(a<=min)
+    a = min;
+  else if(a>=max)
+    a = max;
+  return a;
 }
 
-colRGBAnorm* setcolRGBAnorm(float r, float g, float b, float a){
-  colRGBAnorm* rgbaNorm = malloc(sizeof(colRGBAnorm));
-  rgbaNorm -> r = floatMod(r, 1.0f);
-  rgbaNorm -> g = floatMod(g, 1.0f);
-  rgbaNorm -> b = floatMod(b, 1.0f);
-  rgbaNorm -> a = floatMod(a, 1.0f);
-
-  return rgbaNorm;
+float clampfnorm(float a) {
+  return clampf(a, 0.0f, 1.0f);
 }
 
-colRGBAnorm* normalizeColorRGBA(colRGBA* col){
-  colRGBAnorm* rgbaNorm = setcolRGBAnorm(
-      (float)(col->r)/256.0f, 
-      (float)(col->g)/256.0f, 
-      (float)(col->b)/256.0f, 
-      (float)(col->a)/256.0f);
+RGBAn* setRGBAn(float r, float g, float b, float a){
+  RGBAn* rgban = malloc(sizeof(RGBAn));
+  rgban -> r = clampfnorm(r);
+  rgban -> g = clampfnorm(g);
+  rgban -> b = clampfnorm(b);
+  rgban -> a = clampfnorm(a);
 
-  return rgbaNorm;
+  return rgban;
 }
-
-colRGBAnorm* curCol;
 
 keyBind* setkeyBind(int keyId, void (*action)()){
-  keyBind* kb = malloc(siz1eof(keyBind));
+  keyBind* kb = malloc(sizeof(keyBind));
   kb->keyId = keyId;
   kb->action = action;
 
   return kb;
 }
 
-void changeColor(void* arg){
-  curCol->r += 0.001f;
-  curCol->g += 0.001f;
-  curCol->b += 0.001f;
-};
+RGBAn* addRGBAn(RGBAn* col1, RGBAn* col2){
+  RGBAn* col = setRGBAn(
+      col1->r + col2->r, 
+      col1->g + col2->g, 
+      col1->b + col2->b, 
+      col1->a + col2->a);
 
-void adjustRed(){
-  if(isIncreasing)
-    curCol->r += 0.01f;
-  else
-    curCol->r -= 0.01f;
+  return col;
 }
-/*void adjustGreen(){
-  if(isIncreasing)
-    curCol->g += 0.01f;
-  else
-    curCol->g -= 0.01f;
+
+RGBAn* addRGBAnScalar(RGBAn* col1, float s){
+  RGBAn* col = setRGBAn(
+      col1->r + s, 
+      col1->g + s, 
+      col1->b + s, 
+      col1->a);
+
+  return col;
 }
-void adjustBlue(){
-  if(isIncreasing)
-    curCol->b += 0.01f;
-  else
-    curCol->b -= 0.01f; 
-}*/
-void adjustAlpha(){
-  if(isIncreasing)
-    curCol->a += 0.01f;
-  else
-    curCol->a -= 0.01f;
+
+RGBAn* subtractRGBAn(RGBAn* col1, RGBAn* col2){
+  RGBAn* col = setRGBAn(
+      col1->r - col2->r, 
+      col1->g - col2->g, 
+      col1->b - col2->b, 
+      col1->a - col2->a);
+
+  return col;
+}
+
+RGBAn* curCol;
+
+void changeColor(){
+  curCol = addRGBAnScalar(curCol, 0.001f);
+}
+
+void adjustRedPos(){
+  curCol = addRGBAn(curCol, setRGBAn(0.01f, 0.0f, 0.0f, 0.0f));
+}
+void adjustRedNeg(){
+  curCol = subtractRGBAn(curCol, setRGBAn(0.01f, 0.0f, 0.0f, 0.0f));
+}
+
+void adjustAlphaPos(){
+  curCol = addRGBAn(curCol, setRGBAn(0.0f, 0.0f, 0.0f, 0.01f));
+}
+void adjustAlphaNeg(){
+  curCol = subtractRGBAn(curCol, setRGBAn(0.0f, 0.0f, 0.0f, 0.01f));
 }
 
 void quit(){
   glfwSetWindowShouldClose(main_win, true);
-};
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
   glViewport(0, 0, width, height);
@@ -126,7 +134,7 @@ GLFWwindow* initWindow(int size[], const char* name){
 	return win;
 }
 
-void colorPixel(colRGBAnorm* col){
+void colorPixel(RGBAn* col){
   glClearColor(col->r, col->g, col->b, col->a);
 };
 
@@ -138,6 +146,11 @@ void processInput(keyBind ** km, int kms){
   }
 }
 
+void logColor(int ul){
+  if(ul){
+   printf("red %.2f green %.2f blue %.2f alpha %.2f \n", curCol->r, curCol->g, curCol->b, curCol->a);
+  }
+}
 int main(){
 	initGlfw();
 	main_win = initWindow(win_size, win_name);
@@ -146,10 +159,13 @@ int main(){
   keyBind* keyMap[] = {
     setkeyBind(GLFW_KEY_SPACE, changeColor),
     setkeyBind(GLFW_KEY_CAPS_LOCK, quit),
-    setkeyBind(GLFW_KEY_UP, )};
+    setkeyBind(GLFW_KEY_UP, adjustAlphaPos),
+    setkeyBind(GLFW_KEY_DOWN, adjustAlphaNeg),
+    setkeyBind(GLFW_KEY_LEFT, adjustRedNeg),
+    setkeyBind(GLFW_KEY_RIGHT, adjustRedPos) };
   int keyMapSize = sizeof(keyMap)/sizeof(keyBind*);
 
-  curCol = setcolRGBAnorm(0.1f, 0.1f, 0.1f, 1.0f);
+  curCol = setRGBAn(0.0f, 0.0f, 0.0f, 0.0f);
 	while(!glfwWindowShouldClose(main_win)){
     processInput(keyMap, keyMapSize);
 		
@@ -157,7 +173,9 @@ int main(){
     glClear(GL_COLOR_BUFFER_BIT);
     
     glfwSwapBuffers(main_win);
-		glfwPollEvents();    
+		glfwPollEvents();
+
+    logColor(useLogs);
 	}
 
   glfwTerminate();

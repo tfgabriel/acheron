@@ -16,9 +16,7 @@ void quit(){
 }
 
 int main(){
-  initGlfw();
-  mainWin = initWindow();
-  initGlad();
+  mainWin = start();
 
   keyBind* keyMap[] = {
     setkeyBind(GLFW_KEY_CAPS_LOCK, quit)};

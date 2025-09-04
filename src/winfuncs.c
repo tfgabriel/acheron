@@ -2,6 +2,7 @@
 #include "colors.h"
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
+#include "keys.h"
 
 int win_size[] = {600, 800};
 const char win_name[] = "Acheron";
@@ -23,7 +24,8 @@ GLFWwindow* start(){
   return mwin;
 }
 
-void update(GLFWwindow* mwin, RGBAn* col){	
+void update(GLFWwindow* mwin, RGBAn* col, keyBind* km){
+  processInput(mwin, km);
   glClearColor(col->r, col->g, col->b, col->a);
   glClear(GL_COLOR_BUFFER_BIT);
     

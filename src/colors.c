@@ -2,12 +2,31 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "math.h"
+
 RGBAn* setRGBAn(float r, float g, float b, float a){
   RGBAn* rgban = malloc(sizeof(RGBAn));
   rgban -> r = clampfnorm(r);
   rgban -> g = clampfnorm(g);
   rgban -> b = clampfnorm(b);
   rgban -> a = clampfnorm(a);
+
+  return rgban;
+}
+
+RGBAn* setRGBAnEmpty(){
+  RGBAn* rgban = malloc(sizeof(RGBAn));
+  rgban -> r = 0.0f;
+  rgban -> g = 0.0f;
+  rgban -> b = 0.0f;
+  rgban -> a = 0.0f;
+
+  return rgban;
+}
+
+RGBAn makeRGBAn(float r, float g, float b, float a){
+  float colv[] = {r, g, b, a};
+  clampfnormv(colv);
+  RGBAn rgban = { .r = colv[0], .g = colv[1], .b = colv[2], .a = colv[3]};
 
   return rgban;
 }

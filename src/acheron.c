@@ -10,7 +10,9 @@
 
 GLFWwindow* mainWin;
 RGBAn* curCol;
-int keyMapSize = 0;
+keyBind curKey;
+keyBind keyMap[10];
+
 float vertices[] = {
   -0.5f, -0.5f, 0.0f,
   0.5f, -0.5f, 0.0f,
@@ -35,27 +37,22 @@ const char* fragmentShaderSource = "#version 330 core\n"
     "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
     "}\0";
 
-void quit(){
-  glfwSetWindowShouldClose(mainWin, true);
-}
-
 int main(){
   mainWin = start();
+  curCol = setRGBAnEmpty();
+  curKey = setkeyBindEmpty();
 
-  keyBind* keyMap[] = {
-    setkeyBind(GLFW_KEY_CAPS_LOCK, quit)};
+  keyMap[0] = setkeyBind(GLFW_KEY_CAPS_LOCK, quit, mainWin);
 
   shader* shaderVec[] = { 
     setShader(GL_VERTEX_SHADER, vertexShaderSource), 
     setShader(GL_FRAGMENT_SHADER, fragmentShaderSource)};
 
   initBufferObjects(vertices, verticeStride, vertexObject, shaderVec, shaderProgram);
-  int keyMapSize = sizeof(keyMap)/sizeof(keyBind*);
-  curCol = setRGBAn(0.0f, 0.0f, 0.0f, 0.0f);
-
+  curCol = setRGBAnEmpty();
+  curKey = setkeyBindEmpty();
 	while(!glfwWindowShouldClose(mainWin)){
-   processInput(mainWin, keyMap, keyMapSize);
-   update(mainWin, curCol);
+   update(mainWin, curCol, keyMap);
    draw(shaderProgram, GL_TRIANGLES, vertexObject[1], sizeof(vertices)/(sizeof(float)*verticeStride));
 	} 
 
